@@ -2,6 +2,7 @@ from json import load
 from pylab import figure, hist, setp, show, xlabel, ylabel
 from urllib import urlopen
 from time import sleep
+from collections import Counter
 
 # The race you play - one of terran, zerg, protoss
 MY_RACE = 'protoss'
@@ -61,10 +62,22 @@ class RaceData:
 def PlotHistogram(bins, frequency, color):
 	figure()
 
-	[n, bins, patches] = hist(bins, frequency, normed = 0, histtype = 'stepfilled')
+	[n, bins, patches] = hist(bins, frequency, normed = 1, histtype = 'stepfilled')
 	ylabel('Number of losses')
 	xlabel('Game length (minutes)')
 	setp(patches, 'facecolor', color, 'alpha', 1)
+
+def Percentages(raceloss, racewin):
+        myLosses = Counter(raceloss)
+        wins = Counter(racewin)
+        percent = 0.0
+        for item in myLosses:
+            if wins[item] == 0:
+                 percent = 0 
+            else:
+                totalGames = wins[item] + myLosses[item]
+                percent = int(float((wins[item])/float(totalGames))*100)
+                
 
 def main():
 	# Versus terran
@@ -80,11 +93,13 @@ def main():
 	protoss.CountWinsAndLossesVersusRace()
 
 	# Show the histograms
-	PlotHistogram(RaceData.LossDuration, RaceData.NumLosses,'blue')
+	PlotHistogram(RaceData.LossDuration, RaceData.NumLosses,'black')
 	PlotHistogram(terran.lossDuration, terran.numLosses,'blue')
 	PlotHistogram(zerg.lossDuration, zerg.numLosses,'purple')
 	PlotHistogram(protoss.lossDuration, protoss.numLosses,'green')
 	show()
+
+        Percentages(RaceData.LossDuration, RaceData.WinDuration)
 
 if __name__ == '__main__':
 	main()
