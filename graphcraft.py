@@ -67,6 +67,7 @@ def PlotHistogram(bins, frequency, color):
 	xlabel('Game length (minutes)')
 	setp(patches, 'facecolor', color, 'alpha', 1)
 
+# Calculate the win percentage of each minute losses are recorded for
 def Percentages(raceloss, racewin):
         myLosses = Counter(raceloss)
         wins = Counter(racewin)
@@ -99,7 +100,6 @@ def main():
 	PlotHistogram(protoss.lossDuration, protoss.numLosses,'green')
 	show()
 
-        Percentages(RaceData.LossDuration, RaceData.WinDuration)
 
 if __name__ == '__main__':
 	main()
