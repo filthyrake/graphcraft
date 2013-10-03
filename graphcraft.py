@@ -1,149 +1,90 @@
-import urllib, json, pylab as P, numpy as np
+from json import load
+from pylab import figure, hist, setp, show, xlabel, ylabel
+from urllib import urlopen
+from time import sleep
 
+# The race you play - one of terran, zerg, protoss
+MY_RACE = 'protoss'
 
-url1 = 'http://api.ggtracker.com/api/v1/matches?category=Ladder&game_type=1v1&identity_id=1279&page=1&paginate=true&race=protoss&vs_race=terran&limit=300'
-url2 = 'http://api.ggtracker.com/api/v1/matches?category=Ladder&game_type=1v1&identity_id=1279&page=1&paginate=true&race=protoss&vs_race=zerg&limit=300'
-url3 = 'http://api.ggtracker.com/api/v1/matches?category=Ladder&game_type=1v1&identity_id=1279&page=1&paginate=true&race=protoss&vs_race=protoss&limit=300'
+# Your unique ggtracker ID
+MY_GGTRACKER_ID = 1279
+#MY_GGTRACKER_ID = 393266
 
+# Maximum number of games to analyze
+MAX_GAMES = 300
 
-wins = 0
-losses = 0
-twins = 0
-tlosses = 0
-zwins = 0
-zlosses = 0
-pwins = 0
-plosses = 0
-winDuration = []
-lossDuration = []
-winDurationMins = []
-lossDurationMins = []
-twinDuration = []
-tlossDuration = []
-twinDurationMins = []
-tlossDurationMins = []
-zwinDuration = []
-zlossDuration = []
-zwinDurationMins = []
-zlossDurationMins = []
-pwinDuration = []
-plossDuration = []
-pwinDurationMins = []
-plossDurationMins = []
-totalWinTime = 0
-totalLossTime = 0
+# The root API URL to filter your 1v1 ladder games
+API_ROOT_URL = 'http://api.ggtracker.com/api/v1/matches?category=Ladder' + \
+	'&game_type=1v1&race=' + MY_RACE + '&limit=' + repr(MAX_GAMES) + '&page=1' + \
+	'&paginate=true&identity_id=' + repr(MY_GGTRACKER_ID)
 
-gameData = json.load(urllib.urlopen(url1))
+# Class to store information about your race vs. another race
+class RaceData:
+	# Static data to summarize all races
+	NumWins = 0
+	NumLosses = 0
+	WinDuration = []
+	LossDuration = []
 
-for game in gameData['collection']:
-	if game['entities'][1]['win'] == True:
-		wins+=1
-                twins+=1
-		winDuration.append(game['duration_seconds'])
-		twinDuration.append(game['duration_seconds'])
-                winDurationMins.append(game['duration_seconds']/60)
-                twinDurationMins.append(game['duration_seconds']/60)
-	else:
-		losses+=1
-                tlosses+=1
-		lossDuration.append(game['duration_seconds'])
-                lossDurationMins.append(game['duration_seconds']/60)
-                tlossDuration.append(game['duration_seconds'])
-                tlossDurationMins.append(game['duration_seconds']/60)
+	# Initialize against the provided race
+	def __init__(self, raceName):
+		self.raceName = raceName
+		self.numWins = 0
+		self.numLosses = 0
+		self.winDuration = []
+		self.lossDuration = []
 
-gameData = json.load(urllib.urlopen(url2))
+		self.urlPath = API_ROOT_URL + '&vs_race=' + raceName
 
-for game in gameData['collection']:
-	if game['entities'][1]['win'] == True:
-		wins+=1
-                zwins+=1
-		winDuration.append(game['duration_seconds'])
-		zwinDuration.append(game['duration_seconds'])
-                winDurationMins.append(game['duration_seconds']/60)
-                zwinDurationMins.append(game['duration_seconds']/60)
-	else:
-		losses+=1
-                zlosses+=1
-		lossDuration.append(game['duration_seconds'])
-                lossDurationMins.append(game['duration_seconds']/60)
-                zlossDuration.append(game['duration_seconds'])
-                zlossDurationMins.append(game['duration_seconds']/60)
+	# Use the ggtracker API to query for all games versus this race
+	# Record the number of wins & losses, as well as the duration of each win and loss
+	def CountWinsAndLossesVersusRace(self):
+		gameData = load(urlopen(self.urlPath))
 
-gameData = json.load(urllib.urlopen(url3))
+		for game in gameData['collection']:
+			if game['entities'][1]['win'] == True:
+				self.numWins += 1
+				self.winDuration.append(game['duration_seconds'] / 60)
 
-for game in gameData['collection']:
-	if game['entities'][1]['win'] == True:
-		wins+=1
-                pwins+=1
-		winDuration.append(game['duration_seconds'])
-		pwinDuration.append(game['duration_seconds'])
-                winDurationMins.append(game['duration_seconds']/60)
-                pwinDurationMins.append(game['duration_seconds']/60)
-	else:
-		losses+=1
-                plosses+=1
-		lossDuration.append(game['duration_seconds'])
-                lossDurationMins.append(game['duration_seconds']/60)
-                plossDuration.append(game['duration_seconds'])
-                plossDurationMins.append(game['duration_seconds']/60)
+				RaceData.NumWins += 1
+				RaceData.WinDuration.append(game['duration_seconds'] / 60)
+			else:
+				self.numLosses += 1
+				self.lossDuration.append(game['duration_seconds'] / 60)
 
-for win in winDuration:
-	totalWinTime += win		
+				RaceData.NumLosses += 1
+				RaceData.LossDuration.append(game['duration_seconds'] / 60)
 
-for loss in lossDuration:
-	totalLossTime += loss
+		# Honor limit of 1 request per second
+		sleep(1)
 
+def PlotHistogram(bins, frequency, color):
+	figure()
 
-x = lossDurationMins
+	[n, bins, patches] = hist(bins, frequency, normed = 0, histtype = 'stepfilled')
+	ylabel('Number of losses')
+	xlabel('Game length (minutes)')
+	setp(patches, 'facecolor', color, 'alpha', 1)
 
+def main():
+	# Versus terran
+	terran = RaceData('terran')
+	terran.CountWinsAndLossesVersusRace()
 
-n, bins, patches = P.hist(x, losses, normed=0, histtype='stepfilled')
-P.ylabel('number of losses')
-P.xlabel('game length in minutes')
-P.setp(patches, 'facecolor', 'black', 'alpha', 1)
+	# Versus zerg
+	zerg = RaceData('zerg')
+	zerg.CountWinsAndLossesVersusRace()
 
+	# Versus protoss
+	protoss = RaceData('protoss')
+	protoss.CountWinsAndLossesVersusRace()
 
+	# Show the histograms
+	PlotHistogram(RaceData.LossDuration, RaceData.NumLosses,'blue')
+	PlotHistogram(terran.lossDuration, terran.numLosses,'blue')
+	PlotHistogram(zerg.lossDuration, zerg.numLosses,'purple')
+	PlotHistogram(protoss.lossDuration, protoss.numLosses,'green')
+	show()
 
-
-
-P.figure()
-
-x = tlossDurationMins
-
-
-n, bins, patches = P.hist(x, tlosses, normed=0, histtype='stepfilled')
-P.ylabel('number of losses')
-P.xlabel('game length in minutes')
-P.setp(patches, 'facecolor', 'blue', 'alpha', 1)
-
-
-
-
-P.figure()
-
-x = zlossDurationMins
-
-
-n, bins, patches = P.hist(x, zlosses, normed=0, histtype='stepfilled')
-P.ylabel('number of losses')
-P.xlabel('game length in minutes')
-P.setp(patches, 'facecolor', 'purple', 'alpha', 1)
-
-
-
-
-
-P.figure()
-
-x = plossDurationMins
-
-
-n, bins, patches = P.hist(x, plosses, normed=0, histtype='stepfilled')
-P.ylabel('number of losses')
-P.xlabel('game length in minutes')
-P.setp(patches, 'facecolor', 'green', 'alpha', 1)
-
-
-
-
-P.show()
+if __name__ == '__main__':
+	main()
