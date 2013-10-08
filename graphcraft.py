@@ -68,8 +68,6 @@ def PlotHistogram(bins, frequency, color, wins):
     n, bins, patches = hist(bins, frequency, normed = 0, histtype = 'stepfilled')
     ylabel('Number of losses')
     xlabel('Game length (minutes)')
-#        percentages=Percentages(bins, wins)
-#    annotate(str(percentages), xy=(bins, 0),xycoords=('data', 'axes fraction'), xytext=(0, -32), textcoords='offset points', va='top', ha='center')
 #
     data = bins
     myWins = Counter(wins)
@@ -77,8 +75,7 @@ def PlotHistogram(bins, frequency, color, wins):
 
     # Label the raw counts and the percentages below the x-axis...
     bin_centers = 0.5 * np.diff(bins) + bins[:-1]
-    # Set the ticks to be at the edges of the bins.
-#    ax.set_xticks(bins)
+
     setp(patches, 'facecolor', color, 'alpha', 1)
     for count, x in zip(n, bin_centers):
         # Label the percentages
@@ -93,25 +90,6 @@ def PlotHistogram(bins, frequency, color, wins):
     
     # Give ourselves some more room at the bottom of the plot
     subplots_adjust(bottom=0.20)
-
-
-# Calculate the win percentage of each minute losses are recorded for
-def Percentages(raceloss, racewin):
-        myLosses = Counter(raceloss)
-        wins = Counter(racewin)
-        percent = 0.0
-        percentages = []
-        for item in myLosses:
-            if wins[item] == 0:
-                 percent = 0 
-                 percentages.append(percent)
-            else:
-                totalGames = wins[item] + myLosses[item]
-                percent = int(float((wins[item])/float(totalGames))*100)
-                percentages.append(percent)
-        print percent
-        return percentages
-                
 
 def main():
 	# Versus terran
