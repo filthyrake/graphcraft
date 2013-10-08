@@ -1,8 +1,11 @@
 from json import load
-from pylab import figure, hist, setp, show, xlabel, ylabel
+from pylab import figure, hist, setp, show, xlabel, ylabel, annotate, subplots_adjust
+import numpy as np
+import matplotlib.pyplot as plt
 from urllib import urlopen
 from time import sleep
 from collections import Counter
+from matplotlib.ticker import FormatStrFormatter
 
 # The race you play - one of terran, zerg, protoss
 MY_RACE = 'protoss'
@@ -45,39 +48,69 @@ class RaceData:
 		for game in gameData['collection']:
 			if game['entities'][1]['win'] == True:
 				self.numWins += 1
-				self.winDuration.append(game['duration_seconds'] / 60)
+				self.winDuration.append(int(game['duration_seconds'] / 60))
 
 				RaceData.NumWins += 1
-				RaceData.WinDuration.append(game['duration_seconds'] / 60)
+				RaceData.WinDuration.append(int(game['duration_seconds'] / 60))
 			else:
 				self.numLosses += 1
-				self.lossDuration.append(game['duration_seconds'] / 60)
+				self.lossDuration.append(int(game['duration_seconds'] / 60))
 
 				RaceData.NumLosses += 1
-				RaceData.LossDuration.append(game['duration_seconds'] / 60)
+				RaceData.LossDuration.append(int(game['duration_seconds'] / 60))
 
 		# Honor limit of 1 request per second
 		sleep(1)
 
-def PlotHistogram(bins, frequency, color):
-	figure()
+def PlotHistogram(bins, frequency, color, wins):
+    figure()
+#        percentages = []
+    n, bins, patches = hist(bins, frequency, normed = 0, histtype = 'stepfilled')
+    ylabel('Number of losses')
+    xlabel('Game length (minutes)')
+#        percentages=Percentages(bins, wins)
+#    annotate(str(percentages), xy=(bins, 0),xycoords=('data', 'axes fraction'), xytext=(0, -32), textcoords='offset points', va='top', ha='center')
+#
+    data = bins
+    myWins = Counter(wins)
 
-	[n, bins, patches] = hist(bins, frequency, normed = 1, histtype = 'stepfilled')
-	ylabel('Number of losses')
-	xlabel('Game length (minutes)')
-	setp(patches, 'facecolor', color, 'alpha', 1)
+
+    # Label the raw counts and the percentages below the x-axis...
+    bin_centers = 0.5 * np.diff(bins) + bins[:-1]
+    # Set the ticks to be at the edges of the bins.
+#    ax.set_xticks(bins)
+    setp(patches, 'facecolor', color, 'alpha', 1)
+    for count, x in zip(n, bin_centers):
+        # Label the percentages
+        
+        if (float(count)+myWins[count]) != 0:
+            percent = '%0.0f%%' % (100 * myWins[count] / (float(count)+myWins[count]))
+        else :
+            percent = '0%'
+        if 100 * float(count) / n.sum() != 0:
+            annotate(percent, xy=(x, 0), xycoords=('data', 'axes fraction'),
+                xytext=(0, -45), textcoords='offset points', va='top', ha='center')
+    
+    # Give ourselves some more room at the bottom of the plot
+    subplots_adjust(bottom=0.20)
+
 
 # Calculate the win percentage of each minute losses are recorded for
 def Percentages(raceloss, racewin):
         myLosses = Counter(raceloss)
         wins = Counter(racewin)
         percent = 0.0
+        percentages = []
         for item in myLosses:
             if wins[item] == 0:
                  percent = 0 
+                 percentages.append(percent)
             else:
                 totalGames = wins[item] + myLosses[item]
                 percent = int(float((wins[item])/float(totalGames))*100)
+                percentages.append(percent)
+        print percent
+        return percentages
                 
 
 def main():
@@ -94,10 +127,10 @@ def main():
 	protoss.CountWinsAndLossesVersusRace()
 
 	# Show the histograms
-	PlotHistogram(RaceData.LossDuration, RaceData.NumLosses,'black')
-	PlotHistogram(terran.lossDuration, terran.numLosses,'blue')
-	PlotHistogram(zerg.lossDuration, zerg.numLosses,'purple')
-	PlotHistogram(protoss.lossDuration, protoss.numLosses,'green')
+	PlotHistogram(RaceData.LossDuration, RaceData.NumLosses,'black', RaceData.WinDuration)
+	PlotHistogram(terran.lossDuration, terran.numLosses,'blue', terran.winDuration)
+	PlotHistogram(zerg.lossDuration, zerg.numLosses,'purple', zerg.winDuration)
+	PlotHistogram(protoss.lossDuration, protoss.numLosses,'green', protoss.winDuration)
 	show()
 
 
